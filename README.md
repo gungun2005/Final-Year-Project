@@ -1,1 +1,1 @@
-# Final-Year-Project
+# Image-based crop disease detection system
