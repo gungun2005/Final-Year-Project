@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Doctor</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;800&family=Nunito:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['Fraunces', 'serif'],
+                        sans: ['Nunito', 'sans-serif'],
+                        emoji: ['"Apple Color Emoji"', '"Segoe UI Emoji"', '"Segoe UI Symbol"', '"Noto Color Emoji"']
+                    },
+                    boxShadow: { 'float': '0 10px 40px -10px rgba(0,0,0, 0.15)' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        .blob-card {
+            border-radius: 2rem 1.5rem 2.5rem 1.5rem;
+            transition: all 0.4s ease;
+        }
+
+        .blob-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+
+            body * {
+                visibility: hidden;
+            }
+
+            #resultsCard,
+            #resultsCard * {
+                visibility: visible;
+            }
+
+            #resultsCard {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                color: black !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="font-sans min-h-screen p-6 md:p-12 relative overflow-x-hidden bg-[#FDFCF8] dark:bg-[#161614] text-[#2C2C24] dark:text-[#EAEAE4]">
+
+    <div class="absolute top-6 left-6 z-40 flex gap-4 no-print">
+        <button id="openSidebarBtn"
+            class="w-12 h-12 flex items-center justify-center bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg border border-[#DED8CF] dark:border-[#3D3D36] hover:scale-110 transition-transform text-xl font-emoji"
+            title="History">📜</button>
+        <button id="themeToggleBtn"
+            class="w-12 h-12 flex items-center justify-center bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg border border-[#DED8CF] dark:border-[#3D3D36] hover:scale-110 transition-transform text-xl font-emoji"
+            title="Toggle Theme">🌙</button>
+    </div>
+
+    <div class="absolute top-8 right-8 z-40 flex gap-6 no-print hidden md:flex">
+        <a href="/encyclopedia"
+            class="font-bold text-[#5D7052] dark:text-[#8CA67D] hover:text-[#3A4A32] transition-colors">📖
+            Encyclopedia</a>
+        <a href="/how-it-works"
+            class="font-bold text-[#5D7052] dark:text-[#8CA67D] hover:text-[#3A4A32] transition-colors">⚙️
+            Architecture</a>
+    </div>
+
+    <div id="sidebar"
+        class="fixed top-0 left-0 h-full w-80 bg-[#FDFCF8] dark:bg-[#1A1A17] shadow-2xl transform -translate-x-full transition-transform duration-300 z-50 p-6 border-r border-[#DED8CF] dark:border-[#3D3D36] no-print">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-2xl font-serif font-bold text-[#5D7052] dark:text-[#8CA67D]">Past Scans</h2>
+            <button id="closeSidebarBtn" class="text-3xl hover:text-red-500 transition-colors">&times;</button>
+        </div>
+        <div id="historyList" class="space-y-4 overflow-y-auto h-[85%] pr-2"></div>
+    </div>
+
+    <div class="max-w-4xl mx-auto relative z-10 mt-20 md:mt-0">
+        <header class="text-center mb-12">
+            <h1
+                class="font-serif text-5xl md:text-7xl font-bold mb-4 text-[#5D7052] dark:text-[#8CA67D] tracking-tight">
+                AI Crop Doctor</h1>
+            <p class="text-[#78786C] dark:text-[#A3A39A] text-lg font-medium">Advanced disease detection & natural
+                treatment intelligence.</p>
+        </header>
+
+        <div
+            class="blob-card bg-white/60 dark:bg-[#23231F]/80 backdrop-blur-md border border-[#DED8CF] dark:border-[#3D3D36] shadow-float p-8 md:p-12 mb-12 no-print">
+            <form id="uploadForm" class="space-y-8">
+                <div>
+                    <label class="block font-serif text-xl mb-3 font-semibold text-[#5D7052] dark:text-[#8CA67D]">1.
+                        Upload Leaf Scan</label>
+                    <div
+                        class="relative border-2 border-dashed border-[#5D7052]/40 dark:border-[#8CA67D]/40 rounded-2xl p-8 text-center hover:bg-[#5D7052]/5 dark:hover:bg-[#8CA67D]/10 transition-colors cursor-pointer overflow-hidden min-h-[160px] flex items-center justify-center">
+                        <input type="file" id="imageInput" accept="image/*"
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" required>
+                        <div id="previewContainer" class="z-10 pointer-events-none">
+                            <span class="text-4xl mb-2 block font-emoji">🌿</span>
+                            <span class="font-medium" id="fileNameDisplay">Click or drag image here</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <label class="block font-serif text-xl mb-3 font-semibold text-[#5D7052] dark:text-[#8CA67D]">2.
+                            Select Language</label>
+                        <select id="languageInput"
+                            class="w-full h-14 px-6 rounded-full border border-[#DED8CF] dark:border-[#3D3D36] bg-white dark:bg-[#1A1A17] focus:ring-2 focus:ring-[#5D7052] outline-none shadow-sm text-lg">
+                            <option value="English" data-code="en-IN">English</option>
+                            <option value="Hindi" data-code="hi-IN">Hindi (हिन्दी)</option>
+                            <option value="Telugu" data-code="te-IN">Telugu (తెలుగు)</option>
+                            <option value="Marathi" data-code="mr-IN">Marathi (मराठी)</option>
+                            <option value="Bengali" data-code="bn-IN">Bengali (বাংলা)</option>
+                            <option value="Kannada" data-code="kn-IN">Kannada (ಕನ್ನಡ)</option>
+                            <option value="Tamil" data-code="ta-IN">Tamil (தமிழ்)</option>
+                            <option value="Malayalam" data-code="ml-IN">Malayalam (മലയാളം)</option>
+                            <option value="Gujarati" data-code="gu-IN">Gujarati (ગુજરાતી)</option>
+                            <option value="Punjabi" data-code="pa-IN">Punjabi (ਪੰਜਾਬੀ)</option>
+                            <option value="Odia" data-code="or-IN">Odia (ଓଡ଼ିଆ)</option>
+                            <option value="Urdu" data-code="ur-IN">Urdu (اردو)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-serif text-xl mb-3 font-semibold text-[#5D7052] dark:text-[#8CA67D]">3.
+                            Add Context</label>
+                        <div class="relative">
+                            <input type="text" id="questionInput" placeholder="e.g. Started turning yellow..."
+                                class="w-full h-14 pl-6 pr-14 rounded-full border border-[#DED8CF] dark:border-[#3D3D36] bg-white dark:bg-[#1A1A17] focus:ring-2 focus:ring-[#5D7052] outline-none shadow-sm text-lg">
+                            <button type="button" id="micBtn"
+                                class="absolute right-2 top-2 h-10 w-10 bg-[#5D7052]/10 dark:bg-[#8CA67D]/20 rounded-full flex items-center justify-center hover:bg-[#5D7052]/30 transition-colors z-30 font-emoji"
+                                title="Speak">🎤</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn"
+                    class="w-full bg-[#5D7052] dark:bg-[#8CA67D] text-white dark:text-[#161614] h-16 rounded-full font-bold text-xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+                    <span>Analyze Crop</span>
+                    <span id="loadingSpinner" class="hidden animate-spin text-2xl font-emoji">⏳</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="resultsCard"
+            class="hidden blob-card bg-[#5D7052] dark:bg-[#23231F] text-[#F3F4F1] p-8 md:p-12 shadow-float mb-20 border dark:border-[#8CA67D]/30 relative">
+            <button id="ttsBtn"
+                class="absolute top-6 right-6 bg-white/20 hover:bg-white/30 dark:bg-[#8CA67D]/20 dark:hover:bg-[#8CA67D]/40 px-4 py-2 rounded-full font-bold transition-colors flex items-center gap-2 no-print font-emoji">
+                🔊 <span class="hidden md:inline">Read Aloud</span>
+            </button>
+
+            <h2 class="font-serif text-3xl mb-2 opacity-90 dark:text-[#8CA67D]">Diagnosis Result:</h2>
+            <div id="diagnosisOutput" class="font-serif text-4xl md:text-5xl font-bold mb-8"></div>
+
+            <hr class="border-white/20 dark:border-[#4A4A40] mb-8">
+
+            <h3 class="font-serif text-2xl mb-4 opacity-90 dark:text-[#8CA67D]">Recommended Treatment:</h3>
+            <div id="treatmentOutput" class="text-lg leading-relaxed whitespace-pre-wrap opacity-95 mb-8"></div>
+
+            <div class="mt-8 pt-6 border-t border-white/20 text-sm opacity-90 italic">
+                <p class="mb-6"><strong>⚠️ ADVISORY NOTICE:</strong> This report is AI-generated for preliminary
+                    guidance. If the disease persists or cannot be identified, please verify with a certified
+                    agricultural expert.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 not-italic">
+                    <div class="bg-white/10 p-5 rounded-2xl border border-white/10 shadow-inner">
+                        <p class="font-bold text-white mb-1 uppercase tracking-wider text-[10px]">National Farmers
+                            Helpline</p>
+                        <p class="text-2xl font-bold">📞 1800-180-1551</p>
+                        <p class="text-[10px] mt-1 opacity-80">(Kisan Call Center - Toll Free / 24x7 Support)</p>
+                    </div>
+                    <div class="bg-white/10 p-5 rounded-2xl border border-white/10 shadow-inner">
+                        <p class="font-bold text-white mb-1 uppercase tracking-wider text-[10px]">Expert Consultation
+                        </p>
+                        <p class="text-xs leading-tight">Immediately contact your local <strong>Krishi Vigyan Kendra
+                                (KVK)</strong> or District Agriculture Office for professional field inspection.</p>
+                    </div>
+                </div>
+            </div>
+
+            <button id="downloadBtn" onclick="window.print()"
+                class="no-print w-full md:w-auto bg-white text-[#5D7052] dark:bg-[#8CA67D] dark:text-[#161614] px-8 py-4 rounded-full font-bold shadow-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 font-emoji mt-8">
+                📄 Download PDF Lab Report
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        themeToggleBtn.onclick = () => {
+            document.documentElement.classList.toggle('dark');
+            themeToggleBtn.textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+        };
+
+        const sidebar = document.getElementById('sidebar');
+        document.getElementById('openSidebarBtn').onclick = () => sidebar.classList.remove('-translate-x-full');
+        document.getElementById('closeSidebarBtn').onclick = () => sidebar.classList.add('-translate-x-full');
+
+        function updateHistory(diagnosis) {
+            let history = JSON.parse(localStorage.getItem('cropHistory') || '[]');
+            history.unshift({ diagnosis, date: new Date().toLocaleString() });
+            if (history.length > 10) history.pop();
+            localStorage.setItem('cropHistory', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            let history = JSON.parse(localStorage.getItem('cropHistory') || '[]');
+            const list = document.getElementById('historyList');
+            if (!history.length) return list.innerHTML = '<p class="opacity-60 italic">No past scans yet.</p>';
+            list.innerHTML = history.map(item => `
+                <div class="p-4 rounded-xl bg-white dark:bg-[#23231F] border border-[#DED8CF] dark:border-[#3D3D36] shadow-sm">
+                    <p class="font-bold text-lg text-[#5D7052] dark:text-[#8CA67D] mb-1">${item.diagnosis}</p>
+                    <p class="text-sm opacity-60">${item.date}</p>
+                </div>
+            `).join('');
+        }
+        renderHistory();
+
+        const micBtn = document.getElementById('micBtn');
+        const languageSelect = document.getElementById('languageInput');
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            micBtn.onclick = () => {
+                const selectedCode = languageSelect.options[languageSelect.selectedIndex].getAttribute('data-code');
+                recognition.lang = selectedCode || 'en-IN';
+                micBtn.textContent = '🔴';
+                recognition.start();
+            };
+            recognition.onresult = (e) => {
+                document.getElementById('questionInput').value = e.results[0][0].transcript;
+                micBtn.textContent = '🎤';
+            };
+            recognition.onerror = () => { micBtn.textContent = '🎤'; };
+        }
+
+        const ttsBtn = document.getElementById('ttsBtn');
+        ttsBtn.onclick = () => {
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                ttsBtn.innerHTML = '🔊 <span class="hidden md:inline">Read Aloud</span>';
+                return;
+            }
+            let rawText = document.getElementById('treatmentOutput').textContent;
+            if (!rawText) return;
+            let cleanText = rawText.replace(/[*#_~`>-]/g, '').replace(/\s+/g, ' ').trim();
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.onend = () => { ttsBtn.innerHTML = '🔊 <span class="hidden md:inline">Read Aloud</span>'; };
+            window.speechSynthesis.speak(utterance);
+            ttsBtn.innerHTML = '🛑 <span class="hidden md:inline">Stop Audio</span>';
+        };
+
+        const imageInput = document.getElementById('imageInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const resultsCard = document.getElementById('resultsCard');
+
+        imageInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewContainer.innerHTML = `<img src="${e.target.result}" class="h-32 mx-auto rounded-lg object-cover">`;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const file = imageInput.files[0];
+            if (!file) return alert("Please select an image.");
+
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = `Verifying... <span class="animate-spin text-2xl font-emoji">⏳</span>`;
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('language', languageSelect.value);
+            formData.append('question', document.getElementById('questionInput').value);
+
+            try {
+                const response = await fetch('/api/analyze', { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.status === "success") {
+                    document.getElementById('diagnosisOutput').textContent = data.diagnosis;
+                    document.getElementById('treatmentOutput').textContent = data.treatment;
+                    updateHistory(data.diagnosis);
+                    resultsCard.classList.remove('hidden');
+                    resultsCard.scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (error) {
+                alert("Server Connection Error.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>Analyze Crop</span>`;
+            }
+        });
+    </script>
+</body>
+
+</html>
